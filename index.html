@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diccionario de Alarmas Delta4000 | INLAND</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #070d17; color: #f1f5f9; }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        .card-bg { background-color: #0d1626; border: 1px solid #1e293b; }
+        .search-box-focus:focus-within {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-8">
+    <!-- Header Oficial -->
+    <header class="max-w-4xl mx-auto w-full flex items-center justify-between mb-8">
+        <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-full bg-emerald-950 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-2xl font-bold shadow-lg shadow-emerald-950/50">
+                ⚡
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-extrabold tracking-tight text-white uppercase">Centrales Eólicas</h1>
+                <p class="text-xs md:text-sm font-medium text-emerald-400 flex items-center gap-1.5">
+                    Diccionario de Alarmas Delta4000 <span class="text-slate-500">•</span> INLAND
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2 bg-slate-900/80 border border-slate-800 px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-300 shadow-inner">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="badge-total-count">1270 Alarmas</span>
+        </div>
+    </header>
+
+    <!-- Buscador Principal -->
+    <main class="max-w-4xl mx-auto w-full flex-1">
+        <section class="mb-6">
+            <label for="search-input" class="block text-xs font-bold text-slate-400 tracking-wider uppercase mb-2">
+                Escriba el código de falla:
+            </label>
+            <div class="relative flex items-center bg-[#0a1220] border border-slate-700/80 rounded-xl px-4 py-3 search-box-focus transition duration-200 shadow-xl">
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="Ej: FM51, 724, SF6, Pitch, Incendio..." 
+                    class="w-full bg-transparent font-mono-code text-lg md:text-xl text-white placeholder-slate-500 focus:outline-none uppercase font-bold tracking-wide"
+                    autocomplete="off"
+                    autofocus
+                >
+                <button 
+                    id="btn-clear" 
+                    class="text-slate-400 hover:text-white p-1 rounded-lg transition hidden text-lg"
+                    title="Limpiar búsqueda"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <!-- Accesos Rápidos de Prueba -->
+            <div class="flex items-center flex-wrap gap-2 mt-3 text-xs text-slate-400">
+                <span class="font-semibold text-slate-500">Pruebas:</span>
+                <button class="quick-btn bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 px-2.5 py-1 rounded-md transition font-mono-code">FM99</button>
+                <button class="quick-btn bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 px-2.5 py-1 rounded-md transition font-mono-code">FM51</button>
+                <button class="quick-btn bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 px-2.5 py-1 rounded-md transition font-mono-code">FM58</button>
+                <button class="quick-btn bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 px-2.5 py-1 rounded-md transition font-mono-code">FM10</button>
+                <button class="quick-btn bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 px-2.5 py-1 rounded-md transition font-mono-code">FM0</button>
+                <button class="quick-btn bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 px-2.5 py-1 rounded-md transition font-mono-code">FM724</button>
+                <button class="quick-btn bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 px-2.5 py-1 rounded-md transition font-mono-code">FM5001</button>
+            </div>
+        </section>
+
+        <!-- Contenedor Dinámico del Expediente -->
+        <div id="result-container" class="space-y-6"></div>
+
+        <!-- Mensaje de no coincidencia -->
+        <div id="empty-state" class="hidden text-center py-16 text-slate-500">
+            <div class="text-4xl mb-3">🔍</div>
+            <p class="text-base font-semibold text-slate-400">No se encontraron alarmas con ese término.</p>
+            <p class="text-xs text-slate-500 mt-1">Digita el número (ej: 51, 724) o una palabra clave como "SF6" o "Vibración".</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-4xl mx-auto w-full text-center py-6 mt-12 border-t border-slate-800/60 text-xs text-slate-500">
+        Inland Energy • Central Eólica Tres Hermanas | Parque Eólico Marcona | C.E. San Juan de Marcona • Catálogo Nordex Delta4000
+    </footer>
+
+    <!-- Carga del Catálogo Compilado -->
+    <script src="alarmas_data.js"></script>
+    <script>
+        if (typeof ALARMAS_DATA === 'undefined') { window.ALARMAS_DATA = []; }
+
+        const inputSearch = document.getElementById('search-input');
+        const btnClear = document.getElementById('btn-clear');
+        const container = document.getElementById('result-container');
+        const emptyState = document.getElementById('empty-state');
+        const quickBtns = document.querySelectorAll('.quick-btn');
+
+        function cleanStr(s) {
+            return (s || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        }
+
+        function buscarAlarma(query) {
+            const q = cleanStr(query);
+            if (!q) {
+                renderAlarma(ALARMAS_DATA.find(a => a.fm === 'FM51') || ALARMAS_DATA[0]);
+                btnClear.classList.add('hidden');
+                emptyState.classList.add('hidden');
+                container.classList.remove('hidden');
+                return;
+            }
+
+            btnClear.classList.remove('hidden');
+
+            let match = ALARMAS_DATA.find(a => cleanStr(a.fm) === q || String(a.num) === q);
+            if (!match) {
+                match = ALARMAS_DATA.find(a => cleanStr(a.fm).includes(q) || cleanStr(a.title).includes(q));
+            }
+            if (!match) {
+                match = ALARMAS_DATA.find(a => cleanStr(a.desc).includes(q) || cleanStr(a.uid).includes(q) || cleanStr(a.sub).includes(q));
+            }
+
+            if (match) {
+                emptyState.classList.add('hidden');
+                container.classList.remove('hidden');
+                renderAlarma(match);
+            } else {
+                container.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            }
+        }
+
+        function renderAlarma(a) {
+            if (!a) return;
+
+            const isStop = a.is_stop || a.estado === 'PARADA';
+            const badgeStop = isStop 
+                ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-extrabold bg-red-950/80 border border-red-800 text-red-400">
+                     <span class="w-2 h-2 rounded-full bg-red-500"></span> PARADA
+                   </span>`
+                : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-extrabold bg-amber-950/80 border border-amber-800 text-amber-400">
+                     <span class="w-2 h-2 rounded-full bg-amber-500"></span> AVISO / PREVENTIVO
+                   </span>`;
+
+            const dispBorderClass = a.is_disp_penalty 
+                ? 'border-red-900/80 bg-red-950/20' 
+                : 'border-slate-800 bg-[#0c1424]';
+
+            const dispTitleClass = a.is_disp_penalty ? 'text-red-400' : 'text-emerald-400';
+            const dispSubClass = a.is_disp_penalty ? 'text-red-300/80' : 'text-slate-400';
+
+            container.innerHTML = `
+                <div class="card-bg rounded-2xl p-6 md:p-8 shadow-2xl border border-slate-800">
+                    <div class="flex flex-wrap items-center gap-2.5 mb-4">
+                        <span class="px-3.5 py-1 rounded-md text-sm font-extrabold font-mono-code bg-sky-700 text-white shadow">
+                            ${a.fm}
+                        </span>
+                        <span class="px-3 py-1 rounded-md text-xs font-extrabold font-mono-code bg-amber-700/90 text-white shadow">
+                            ${a.sub}
+                        </span>
+                        ${badgeStop}
+                    </div>
+
+                    <h2 class="text-xl md:text-2xl font-black text-white tracking-tight mb-4">
+                        ${a.title}
+                    </h2>
+
+                    <div class="bg-[#080e18] border border-slate-800/90 rounded-xl p-4 md:p-5 text-sm md:text-base leading-relaxed text-slate-200">
+                        ${a.desc}
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 tracking-wider uppercase mb-3 px-1">
+                        Parámetros Operativos (Matriz SCADA)
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        <div class="border ${dispBorderClass} rounded-xl p-4 transition">
+                            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                1. Disponibilidad
+                            </span>
+                            <div class="text-lg md:text-xl font-black ${dispTitleClass}">
+                                ${a.disp}
+                            </div>
+                            <div class="text-xs ${dispSubClass} mt-0.5">
+                                ${a.disp_sub}
+                            </div>
+                        </div>
+
+                        <div class="border border-slate-800 bg-[#0c1424] rounded-xl p-4">
+                            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                2. Modo Reset
+                            </span>
+                            <div class="text-lg md:text-xl font-black text-sky-400 font-mono-code">
+                                ${a.reset_mode}
+                            </div>
+                            <div class="text-xs text-slate-400 mt-0.5">
+                                ${a.reset_sub}
+                            </div>
+                        </div>
+
+                        <div class="border border-slate-800 bg-[#0c1424] rounded-xl p-4">
+                            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                3. Prog. Frenado (BP)
+                            </span>
+                            <div class="text-lg md:text-xl font-black text-white font-mono-code">
+                                ${a.bp}
+                            </div>
+                            <div class="text-xs text-slate-400 mt-0.5">
+                                ${a.bp_sub}
+                            </div>
+                        </div>
+
+                        <div class="border border-slate-800 bg-[#0c1424] rounded-xl p-4">
+                            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                4. Prog. Yaw (YP)
+                            </span>
+                            <div class="text-lg md:text-xl font-black text-white font-mono-code">
+                                ${a.yp}
+                            </div>
+                            <div class="text-xs text-slate-400 mt-0.5">
+                                ${a.yp_sub}
+                            </div>
+                        </div>
+
+                        <div class="border border-slate-800 bg-[#0c1424] rounded-xl p-4">
+                            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                5. StatCom Activo
+                            </span>
+                            <div class="text-lg md:text-xl font-black text-white">
+                                ${a.statcom}
+                            </div>
+                            <div class="text-xs text-slate-400 mt-0.5">
+                                ${a.statcom_sub}
+                            </div>
+                        </div>
+
+                        <div class="border border-slate-800 bg-[#0c1424] rounded-xl p-4">
+                            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                6. Nivel Reset
+                            </span>
+                            <div class="text-lg md:text-xl font-black text-white">
+                                ${a.reset_lvl}
+                            </div>
+                            <div class="text-xs text-slate-400 mt-0.5">
+                                ${a.reset_lvl_sub}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        inputSearch.addEventListener('input', (e) => buscarAlarma(e.target.value));
+        btnClear.addEventListener('click', () => {
+            inputSearch.value = '';
+            buscarAlarma('');
+            inputSearch.focus();
+        });
+        quickBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                inputSearch.value = btn.innerText;
+                buscarAlarma(btn.innerText);
+            });
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            inputSearch.value = 'FM51';
+            buscarAlarma('FM51');
+        });
+    </script>
+</body>
+</html>
